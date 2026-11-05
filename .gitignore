@@ -1,0 +1,40 @@
+# Muestras extraídas: solo conservar localmente
+RobotApp
+AuxCtrl
+everest-server
+Monitor
+libcli.so
+*.elf
+*.bin
+*.so
+*.img
+*.fw
+*.dump
+*.pcap
+*.pcapng
+
+# Paquetes y registros de laboratorio
+*.zip
+*.7z
+*.tar
+*.tgz
+*.log
+*.temp
+logs/
+dumps/
+firmware/
+captures/
+private/
+local/
+
+# Credenciales y configuraciones particulares
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*credentials*
+*secrets*
+*password*
+wifi-config*
