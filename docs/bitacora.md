@@ -58,3 +58,21 @@
 **Interpretación:** ese cero todavía **no es una medición verificada** del nivel de la batería principal. Puede ser una interfaz del controlador de alimentación del SoC sin datos útiles para el robot. Tampoco la ausencia de coincidencias en `logread` demuestra que la telemetría no exista.
 
 **Próxima comprobación (sin modificaciones):** consultar `type`, `present`, `status`, `capacity`, `voltage_now`, `current_now` y `charge_now` de `/sys/class/power_supply/battery` para identificar si el indicador responde a hardware real.
+
+
+### Segunda comprobación de sysfs (misma sesión)
+
+Se consultaron atributos de `/sys/class/power_supply/battery` y el robot respondió:
+
+```text
+type: Battery
+present: 1
+status: Charging
+capacity: 0
+voltage_now: 0
+current_now: 0
+```
+
+**Conclusión restringida**: el subsistema de alimentación del kernel informa un objeto `Battery` presente/cargando, pero los ceros simultáneos de capacidad, voltaje y corriente **no permiten interpretar `capacity=0` como batería principal agotada**. No se ha observado una lectura real de porcentaje. Posible driver con valores ficticios, no demostrado.
+
+**Próxima comprobación, solo lectura:** buscar en registros disponibles las cadenas verificadas en el binario `everest-server`: `Get battery percent actual`, `battery_level` y `handleGetBattaryReq battery_percent`, evaluando antigüedad de los registros. Si no hay trazas, reconstruir offline el protocolo real.
