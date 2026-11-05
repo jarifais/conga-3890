@@ -104,3 +104,32 @@ Para un ensayo real, pendiente de pruebas en Windows:
 - Preparación de software mock: **lista para ejecutar**, aún no probada en el equipo del usuario.
 - Servidor real Clean Assistant conectado a la Conga: **pendiente**.
 - Lectura real de porcentaje y prueba de cepillo individual: **pendientes**.
+
+
+## Resultado actualizado: mock verificado (2026-11-05)
+
+El usuario ejecutó la preparación y la comprobación de la API mock en Windows. Ambas terminaron en PASS; `/api/info.mode = local` indica el enlace, no la modalidad `mock/real`, y el verificador distingue el simulador por su huella sintética. Se mostró 10% **simulado**, nunca el valor del robot.
+
+## Fase 2: diagnóstico previo del anfitrión para servicio REAL
+
+Antes de configurar DNS, ejecuta en Windows PowerShell el script [`preflight-clean-assistant-real.ps1`](../scripts/preflight-clean-assistant-real.ps1), primero actualizando el repositorio propio:
+
+~~~powershell
+& {
+    $ErrorActionPreference = "Stop"
+    $tools = Join-Path $env:USERPROFILE "Conga3890-TOOLS"
+    & git -C $tools pull --ff-only
+    if ($LASTEXITCODE -ne 0) { throw "Error al actualizar." }
+    $script = Join-Path $tools "scripts\preflight-clean-assistant-real.ps1"
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script
+    if ($LASTEXITCODE -ne 0) { throw "Preflight interrumpido." }
+}
+~~~
+
+**El script solo lee datos:** detecta OpenSSL (incluyendo copia empaquetada con Git for Windows), hash upstream, puertos disponibles (9090 control, 8001 OTA, 8002/8006 informes, 8000 panel) e IPv4 del servidor. No configura puertos del router, firewall, certificados ni dominio alguno. Si OpenSSL está en Git pero fuera de `PATH`, el futuro lanzador deberá añadir su carpeta al `PATH` **solo del proceso**.
+
+**Riesgo detectado en código upstream:** en `backend/app.py` las instalaciones nuevas, al conectar el robot, envían automáticamente `set_upgrade(False)` y `dust_freq(0)`, comandos de ajuste persistente. Esto podría cambiar la configuración de la Conga 3890, por lo que **no hay que conectarla a una instalación real fresca sin desactivar antes ese bloque**. El backend utiliza `firstrun.json` para considerar completada la inicialización; se preparará un `DATA_DIR` separado del simulador con una marca de `done=true` comprobada antes del primer arranque real. Mantener el entorno mock intacto.
+
+**No arrancar todavía un servidor real:** escucharía en interfaces de red (puertos 9090/8001/8002/8006). Debemos revisar acceso, certificados, reversión de DNS y los efectos de comandos de sincronización de estado antes de redirigir el robot. La configuración del simulador no se transforma ni reutiliza como configuración real.
+
+La comprobación de puertos no prueba que el firewall permita conexiones entrantes desde la Conga: esa verificación se realizará posteriormente, cuando el servidor ya esté listo y correctamente restringido a la red local.
