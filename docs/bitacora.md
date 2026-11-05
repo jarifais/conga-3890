@@ -303,3 +303,27 @@ PID: 483
 **Estrategia:** no dirigir peticiones arbitrarias a TCP/6000 (flujo MRPT de mapas) ni a la sesión saliente cifrada. Para obtener una respuesta `get_status` funcional se necesita **o bien** reconstruir y validar el protocolo de petición de estado, **o bien** montar un backend local compatible como Clean Assistant (proyecto que reporta soporte para 3890) y configurar que el robot se conecte allí. Esta segunda vía supone cambios DNS/red y posiblemente reinicio, no es una prueba de solo lectura ni un cambio trivial.
 
 **Objetivos pendientes:** mostrar porcentaje real de batería en consola y, después, estudiar inicio/parada segura del cepillo lateral. No existe todavía ninguna orden individual de cepillo validada.
+
+
+## 2026-11-05 · Clean Assistant: preparación aislada, sin cambios en la Conga
+
+A petición del usuario, se revisó el README y código upstream de Clean Assistant y se preparó una fase de pruebas **simuladas**. **Esto NO es todavía una lectura de batería ni una comprobación funcional de la 3890 real.**
+
+**Fuente fijada:** commit `0cf13b370bbb708c429a64be0270210e8426d0ca` (v0.36.1), 2026-11-05.
+- `CONGA_MODE=mock` carga `MockRobot`; `CONGA_BACKEND=new` corresponde a la familia 3890 en Clean Assistant.
+- `GET /api/state` contiene el porcentaje; `GET /api/battery` devuelve métricas de salud, no el porcentaje.
+- En `conga_core/state.py`: `battary` se convierte a `int(battary / 2)`.
+- El modo simulado empieza con `battery=99`, lo cual **no debe confundirse** con un valor real.
+- La instalación mock escucha solo en `127.0.0.1:18000`, sin redirección DNS ni puertos públicos de control.
+
+**Archivos añadidos:**
+- [Guía](laboratorio-clean-assistant.md).
+- [Preparación entorno y pruebas offline](../scripts/preparar-clean-assistant-mock.ps1).
+- [Servidor mock local](../scripts/ejecutar-clean-assistant-mock.ps1).
+- [Verificador de API mock](../scripts/verificar-clean-assistant-mock.ps1).
+
+**Corrección:** `scripts/mostrar-bateria-clean-assistant.ps1` ahora verifica `GET /api/info`, exige `mode=real` y aborta ante `mock` para no informar batería ficticia como real.
+
+**Evaluación crítica:** el Compose upstream publica 9090 y puertos legacy, pero omite el mapeo de 8001/8002/8006, requeridos para OTA/historial en modo real según su README. **No usar tal cual para migrar nuestra 3890.**
+
+**Ejecución real en Windows:** pendiente; no se dispone aquí del entorno Windows del usuario para confirmar instalación y funcionamiento. Antes de cualquier cambio DNS o reinicio debe pasar el test mock. Después se preparará, de forma separada y reversible, la integración real.
