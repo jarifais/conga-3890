@@ -76,3 +76,14 @@ current_now: 0
 **Conclusión restringida**: el subsistema de alimentación del kernel informa un objeto `Battery` presente/cargando, pero los ceros simultáneos de capacidad, voltaje y corriente **no permiten interpretar `capacity=0` como batería principal agotada**. No se ha observado una lectura real de porcentaje. Posible driver con valores ficticios, no demostrado.
 
 **Próxima comprobación, solo lectura:** buscar en registros disponibles las cadenas verificadas en el binario `everest-server`: `Get battery percent actual`, `battery_level` y `handleGetBattaryReq battery_percent`, evaluando antigüedad de los registros. Si no hay trazas, reconstruir offline el protocolo real.
+
+
+### Tercera comprobación: registros del robot y estado físico
+
+En la sesión interactiva Tina Linux se listó `/mnt/UDISK/log` y se buscó `Get battery percent actual|handleGetBattaryReq battery_percent|battery_level` en archivos normales del directorio. **No se obtuvieron coincidencias**; los numerosos archivos `.gz` no se descomprimieron para la búsqueda, así que esto **no demuestra ausencia de telemetría**. El log muestra que el terminal puede entremezclar el eco de comandos pegados a la vez.
+
+**Hipótesis en estudio:** algún controlador del robot podría permanecer en reposo aunque Linux y los servicios principales estén activos. La interfaz `/sys/class/power_supply/battery` ya mostró `present=1`, `Charging`, `capacity=0`, `voltage_now=0` y `current_now=0`, valores sin validación como porcentaje real.
+
+**Próxima prueba segura:** observar si el robot indica luz azul (encendido) o naranja (cargando). Solo si realmente estuviera apagado, seguir el manual Conga 3890 para encenderlo (pulsación mantenida ~3 segundos); evitar pulsaciones cortas que podrían arrancar limpieza. Volver a leer atributos de `sysfs` y, si es posible, comparar con el porcentaje de la app oficial. Si los ceros persisten, pasar a reconstruir un método de consulta en `RobotApp`/`everest-server`; no inyectar órdenes a sensores ni motores.
+
+**Referencia:** https://manualzz.com/doc/73806038/cecotec-conga-3890-instruction-manual
