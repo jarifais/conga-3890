@@ -268,3 +268,19 @@ Fuentes:
 **Artefacto preparado**: `scripts/mostrar-bateria-clean-assistant.ps1`, PowerShell de solo lectura para cuando un servidor real de Clean Assistant esté conectado; no es ejecutable útil en nuestro entorno actual hasta instalar y configurar ese servicio. La alternativa es reconstruir nuestra propia consulta de estado de `RobotApp` (trabajo de protocolo pendiente).
 
 **Cepillo lateral:** todavía no existe control individual y parada validado. Se mantiene bloqueado cualquier ensayo activo.
+
+
+## 2026-11-05 · Conexión saliente real de control (puerto 9090)
+
+Desde SSH Wi-Fi el usuario leyó (sin cambiar configuración):
+
+- En **ambas** rutas, `/etc/sysconf/sysConfig.ini` y `/mnt/UDISK/config/sysConfig.ini`: `server_cmd_address=cecotec-ota.3irobotix.net`, `server_ota_address=cecotec-ota.3irobotix.net`, `server_ssl_cmd_port=8001`, `server_ssl_enable=1` y `server_cmd_port=4010`.
+- `netstat -tn` mostró dos conexiones `ESTABLISHED`: una sesión SSH de administración en TCP/22 desde el PC y **una conexión saliente del robot a un servidor externo TCP/9090**. No publicamos IPs de la sesión para evitar vincular la unidad con el entorno privado.
+
+**Interpretación:** los valores en archivos de configuración no implican que 4010/8001 sean los canales en uso para toda comunicación: en vivo vemos TCP/9090. La IP externa por sí sola no identifica con certeza el proveedor.
+
+**Evidencia externa relevante y más específica**: la ingeniería inversa de la app de Conga 3890 descrita en Clean Assistant caracteriza esta generación como **híbrida**: control vía WebSocket/JSON y mapas por JNI/TLS; la generación más nueva utiliza WebSocket en 9090. Fuente: https://github.com/miguelsg29/clean-assistant/issues/12 (comentario de investigación del 27 de octubre de 2026). Nuestro `RobotApp` extraído incorpora además símbolos `CManagerWebsocket`, lo que respalda esa línea de investigación. **Pendiente:** comprobar que la conexión observada de 9090 corresponde realmente a `RobotApp` y confirmar la negociación/protocolo.
+
+**Siguiente comprobación, pasiva y sin tocar firmware:** [`scripts/identificar-cliente-9090.sh`](../scripts/identificar-cliente-9090.sh) consulta `/proc/net/tcp` para localizar los inodos de conexiones `ESTABLISHED` al puerto remoto 9090 y relaciona sus descriptores con el PID/ejecutable de Linux. El usuario aún no ha ejecutado esta prueba.
+
+**Batería:** no se ha obtenido todavía un porcentaje real. Una vez identificada la sesión, estudiar offline el formato de consulta `get_status` y el campo `battary` (escala 0..200) antes de evaluar un método no destructivo. La conexión TCP remota cifrada no debe interceptarse ni redirigirse a ciegas. Cepillo lateral individual: ninguna orden de arranque/parada validada; no moverlo por conjetura.
