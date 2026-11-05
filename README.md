@@ -18,6 +18,16 @@ Investigación técnica **no oficial** de la Cecotec Conga 3890 a través de USB
 | Consulta de estado | Símbolos y mensajes encontrados; **protocolo todavía sin reconstruir** |
 | Batería y sensores en vivo | **No conseguido todavía** |
 
+## Laboratorio Clean Assistant (preparación segura)
+
+- [Guía de instalación y pruebas aisladas](docs/laboratorio-clean-assistant.md).
+- [Preparar simulador en Windows](scripts/preparar-clean-assistant-mock.ps1).
+- [Arrancar simulador en localhost](scripts/ejecutar-clean-assistant-mock.ps1).
+- [Comprobar API simulada](scripts/verificar-clean-assistant-mock.ps1).
+- [Lector de batería real (solo cuando exista backend REAL configurado)](scripts/mostrar-bateria-clean-assistant.ps1).
+
+**Importante:** el simulador no obtiene telemetría del robot. No se ha cambiado DNS ni firmware, y todavía no se ha leído el porcentaje real de la Conga 3890. La compatibilidad de Clean Assistant con nuestra unidad se verificará en una fase separada.
+
 ## Documentación
 
 - [Bitácora de pruebas](docs/bitacora.md): resultados comprobados, fallos y próximos pasos.
