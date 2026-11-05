@@ -13,18 +13,12 @@
     foreach ($file in $scripts) {
         $tokens = $null
         $errors = $null
-        [void][System.Management.Automation.Language.Parser]::ParseFile(
-            $file.FullName, [ref]$tokens, [ref]$errors
-        )
+        [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors)
         if ($null -ne $errors -and $errors.Count -gt 0) {
             $fallos++
             Write-Host ("FAIL: {0}" -f $file.Name) -ForegroundColor Red
             foreach ($err in $errors) {
-                Write-Host ("  Linea {0}, columna {1}: {2}" -f
-                    $err.Extent.StartLineNumber,
-                    $err.Extent.StartColumnNumber,
-                    $err.Message
-                ) -ForegroundColor Red
+                Write-Host ("  Linea {0}, columna {1}: {2}" -f $err.Extent.StartLineNumber, $err.Extent.StartColumnNumber, $err.Message) -ForegroundColor Red
             }
         }
         else {
@@ -33,9 +27,7 @@
     }
 
     if ($fallos) {
-        throw ("Sintaxis invalida en {0} de {1} archivos PowerShell." -f
-            $fallos, $scripts.Count)
+        throw ("Sintaxis invalida en {0} de {1} archivos PowerShell." -f $fallos, $scripts.Count)
     }
-    Write-Host ("PASS: sintaxis correcta de {0} archivos PowerShell." -f
-        $scripts.Count) -ForegroundColor Green
+    Write-Host ("PASS: sintaxis correcta de {0} archivos PowerShell." -f $scripts.Count) -ForegroundColor Green
 }
