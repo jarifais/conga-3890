@@ -327,3 +327,23 @@ A petición del usuario, se revisó el README y código upstream de Clean Assist
 **Evaluación crítica:** el Compose upstream publica 9090 y puertos legacy, pero omite el mapeo de 8001/8002/8006, requeridos para OTA/historial en modo real según su README. **No usar tal cual para migrar nuestra 3890.**
 
 **Ejecución real en Windows:** pendiente; no se dispone aquí del entorno Windows del usuario para confirmar instalación y funcionamiento. Antes de cualquier cambio DNS o reinicio debe pasar el test mock. Después se preparará, de forma separada y reversible, la integración real.
+
+
+## 2026-11-05 · Incidencia real al preparar Clean Assistant en Windows
+
+**Entorno del usuario:** Windows PowerShell clásico y Python `3.14.3`, `git clone` del repositorio `jarifais/conga-3890` completado correctamente. Primer intento de `scripts/preparar-clean-assistant-mock.ps1`:
+
+~~~text
+Descargando version fijada de Clean Assistant...
+git.exe : fatal: Needed a single revision
+... rev-parse --verify HEAD 2>$null
+La preparacion del laboratorio ha fallado.
+~~~
+
+**Causa raíz:** tras `git init` de un repositorio vacío, `HEAD` no apunta todavía a ningún commit. `git rev-parse --verify HEAD 2>$null` emite error de Git por stderr, que PowerShell 5.1 con `$ErrorActionPreference="Stop"` convierte en excepción terminante.
+
+**Corrección aplicada:** `git rev-parse --verify --quiet HEAD` seguido de tratamiento explícito de `$LASTEXITCODE`: si el repositorio aún no tiene `HEAD` válido, `$head = $null` y se pasa a `git fetch` del commit fijado. `--quiet` suprime el mensaje de error en repositorios sin commits. Cambio: https://github.com/jarifais/conga-3890/commit/9fa70479b274fb2ed8a06c30019489aeb9470d61
+
+**Recuperación sin borrar carpetas:** desde PowerShell ejecutar `git -C "$env:USERPROFILE\\Conga3890-TOOLS" pull --ff-only` y volver a lanzar `scripts/preparar-clean-assistant-mock.ps1`. Antes de reintentar, no hacer `git reset --hard`, `git clean` ni eliminar `Conga3890-LAB`. Se conservan la carpeta de herramientas y el repositorio upstream parcialmente creado.
+
+**Estado:** corrección publicada; segunda ejecución y compatibilidad efectiva de dependencias con Python 3.14 **pendientes de comprobar por el usuario**. No se ha conectado el robot al simulador ni se ha leído su batería real.
