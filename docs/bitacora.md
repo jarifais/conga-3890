@@ -120,3 +120,18 @@ Prueba en `root@TinaLinux:~#`:
 `everest-server` contiene símbolos `CEntityTcp::tcpServerThread`, `tcpReceiveThread`, `tcpSendThread`, `sendSensorData`, `handleTCPMessage`, `setRemoteVelocity` y `autoCleanTest`. También aparecen textos **`EM_DEBUG_SIMULATE_BATTERY`**, **`EI_MANUAL_CONTROL_MODE`**, órdenes de limpieza y calibración. Por tanto, el interfaz TCP podría manejar **acciones activas**; no enviar ninguna trama o comando de prueba sin descifrar el protocolo.
 
 **Experimento propuesto** (todavía no ejecutado en este momento): abrir un túnel ADB a TCP/6000 y leer durante ~2,5 segundos sin enviar datos de aplicación, para comprobar si `everest-server` emite información espontánea. Archivo: [`scripts/sondeo-pasivo-tcp6000.ps1`](../scripts/sondeo-pasivo-tcp6000.ps1). La mera conexión puede modificar el estado de sesión del servicio: realizarla con el robot detenido y cerrar después. **Un paquete recibido no sería, sin decodificación, una medición validada de batería.**
+
+## 2026-11-05 · Flujo pasivo en TCP/6000 y transición a Wi-Fi
+
+**Experimento realizado por el usuario:** `adb forward tcp:16692 tcp:6000`, conexión local de solo lectura, sin transmitir órdenes. Se recibieron **256 bytes** en la primera lectura. Inicio hexadecimal: `4D-52-50-54-4D-65-73-73-61-67-65-65`; entre las cadenas ASCII aparecieron `MRPTMessage` y `COccupancyGridMap2D`, una clase MRPT de mapa de ocupación. Se trata **probablemente** de una trama de mapa, no de un porcentaje de batería. El conjunto completo no se almacenó ni publicó para proteger datos del domicilio.
+
+**Nueva prioridad solicitada:** identificar la IPv4 de `wlan0` y verificar conexión Wi-Fi desde Windows sin depender del túnel USB. Luego investigar la consulta real de batería y el control **individual** del cepillo lateral delantero.
+
+**Estado del control de motores:** en `everest-server` existen símbolos `CEntityHwdriver::setSideBrushPwm` y `CControllerInterface::setBrushSpeed`, pero **todavía no se ha reconstruido ni validado ninguna petición de red que active y detenga exclusivamente ese cepillo**. No usar llamadas directas ni tramas desconocidas.
+
+### Próximo protocolo de prueba
+
+1. En consola Linux interactiva: `ifconfig wlan0` y `route -n` (solo lectura). Registrar **solo IPv4 privada y alcance**, no MAC/SSID.
+2. Desde **Windows PowerShell** en la misma red: ejecutar [`scripts/verificar-wifi.ps1`](../scripts/verificar-wifi.ps1), que lee el banner SSH por el puerto 22 sin autenticarse ni enviar órdenes. Esta prueba puede fallar si la Conga está en modo punto de acceso, en otra red o la LAN aísla dispositivos.
+3. Si funciona, estudiar un cliente SSH sobre LAN para diagnóstico y el mecanismo real de `get_status` / `handleGetBattaryReq`. **No interpretar** valores `battary` de protocolos de terceros como porcentajes sin conocer su escala.
+4. Para el cepillo, identificar semántica de las órdenes ON/OFF, interbloqueos y parada de emergencia antes de mover el actuador.
