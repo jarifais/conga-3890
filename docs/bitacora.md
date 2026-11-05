@@ -177,3 +177,25 @@ Unable to negotiate ... no matching host key type found. Their offer: ssh-rsa
 **Advertencia:** `ssh-rsa` usa SHA-1; mantener su uso limitado a laboratorio y validar la huella de la clave de host por un canal independiente (USB) antes de aceptar la primera conexión. Este ajuste habilita **la clave del servidor**, no necesariamente autenticación por clave RSA del usuario (que no se ha utilizado).
 
 **Estado:** conexión SSH autenticada pendiente de resultado. Referencia: https://www.openssh.org/legacy.html
+
+
+### 2026-11-05 · Segundo obstáculo SSH: MAC heredado
+
+Después de habilitar `HostKeyAlgorithms=+ssh-rsa` **solo en la conexión**, el cliente OpenSSH de Windows avanzó en la negociación, pero devolvió:
+
+```text
+Unable to negotiate ... no matching MAC found. Their offer: hmac-sha1,hmac-md5
+```
+
+**Diagnóstico:** el servidor Dropbear 2015.71 anuncia algoritmos de autenticación de mensajes (MAC) heredados; este cliente OpenSSH los tiene deshabilitados de forma predeterminada.
+
+**Ajuste puntual propuesto** (pendiente de resultado), sin modificaciones globales:
+
+```powershell
+& {
+    $ip = "<IPv4-local-de-la-Conga>"
+    & ssh -o HostKeyAlgorithms=+ssh-rsa -o MACs=+hmac-sha1 -o ConnectTimeout=5 "root@$ip"
+}
+```
+
+La adición utiliza SHA-1 para los algoritmos indicados, con las limitaciones criptográficas correspondientes. **No** desactivar la verificación de clave del servidor ni aceptar una huella desconocida sin compararla por USB. Tras conseguir la sesión SSH, comprobar la lectura real de batería; **ningún control de motor está validado**.
