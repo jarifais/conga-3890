@@ -153,3 +153,27 @@ CONEXION WIFI VERIFICADA
 **Cepillo lateral delantero:** objetivo pendiente. Aún no hay una orden de inicio/parada individual verificada. No enviar comandos arbitrarios a motores; investigar primero el protocolo y las condiciones de parada.
 
 **Nota sobre el flujo TCP/6000:** el encabezado recibido contenía `MRPTMessage` y `COccupancyGridMap2D`, indicativos de un mapa de ocupación, no de la batería. No publicar capturas completas de tramas de mapa.
+
+
+### 2026-11-05 · Intento SSH autenticado por Wi-Fi: clave de host heredada
+
+Con TCP/22 ya verificado por LAN, el primer intento de `ssh root@<ip-local>` desde Windows falló **antes de pedir credenciales**:
+
+```text
+Unable to negotiate ... no matching host key type found. Their offer: ssh-rsa
+```
+
+**Diagnóstico:** Dropbear 2015.71 ofrece el algoritmo de firma de host `ssh-rsa` (RSA/SHA-1), deshabilitado por defecto por las versiones modernas de OpenSSH. **No es un error de red ni contraseña.**
+
+**Mitigación puntual solo para la IP del robot, sin cambiar configuraciones ni firmware:**
+
+```powershell
+& {
+    $ip = "<IPv4-local-de-la-Conga>"
+    & ssh -o HostKeyAlgorithms=+ssh-rsa -o ConnectTimeout=5 "root@$ip"
+}
+```
+
+**Advertencia:** `ssh-rsa` usa SHA-1; mantener su uso limitado a laboratorio y validar la huella de la clave de host por un canal independiente (USB) antes de aceptar la primera conexión. Este ajuste habilita **la clave del servidor**, no necesariamente autenticación por clave RSA del usuario (que no se ha utilizado).
+
+**Estado:** conexión SSH autenticada pendiente de resultado. Referencia: https://www.openssh.org/legacy.html
