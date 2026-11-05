@@ -88,6 +88,8 @@
         Write-Host "Verificando importacion y modo seguro..." -ForegroundColor Cyan
         & $python -c "from backend.app import MODE, robot; assert MODE == 'mock', MODE; assert type(robot).__name__ == 'MockRobot'; print('PASS: MockRobot confirmado, sin robot fisico')"
         if ($LASTEXITCODE -ne 0) { throw "Fallo la verificacion del modo mock." }
+        & $python -c "from conga_core.state import RobotState; a=RobotState().update_from_report({'battary':200, 'chargeStatus':1}); b=RobotState().update_from_report({'battary':150, 'chargeStatus':0}); assert a.battery==100 and b.battery==75; print('PASS: conversion 0-200 a porcentaje validada con datos sinteticos')"
+        if ($LASTEXITCODE -ne 0) { throw "Fallo la prueba sintética de conversion de bateria." }
     }
     finally { Pop-Location }
 
