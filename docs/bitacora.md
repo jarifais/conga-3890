@@ -406,3 +406,14 @@ Cargando (simulado): True
 **Nota arquitectónica:** `conga_core/robot.py::_ensure_certs` necesita OpenSSL CLI para crear un certificado con SAN para múltiples dominios; `RealRobot::_serve` escucha en `0.0.0.0:9090`; `LocalCloud.start` crea listeners `0.0.0.0:8001/8002/8006`. No iniciar esa variante antes de confirmar puertos disponibles y control de acceso del host; el mock solo escucha en loopback 127.0.0.1.
 
 **Estado:** batería física y cepillo lateral independiente, pendientes. Ningún cambio en el DNS o firmware de la Conga.
+
+
+### 2026-11-05 · Error de parseo en script preflight: MissingEndCurlyBrace
+
+El usuario ejecutó `scripts/preflight-clean-assistant-real.ps1` después de `git pull --ff-only` y PowerShell emitió `ParserError: MissingEndCurlyBrace` en la línea del bloque `& {` (línea 6). **El diagnóstico no llegó a ejecutarse.**
+
+**Causa raíz comprobada leyendo el archivo publicado:** faltaba literalmente la llave final `}` que cierra el bloque principal `& { ... }`; el fichero terminaba inmediatamente después del último `Write-Host`. Se añadió la llave mediante commit https://github.com/jarifais/conga-3890/commit/37a5146f4ef147501a7d05379c86a486b97c54d2
+
+**Prevención para todos los futuros scripts:** se añadió [`scripts/verificar-sintaxis-powershell.ps1`](../scripts/verificar-sintaxis-powershell.ps1) que llama al parser de PowerShell `[System.Management.Automation.Language.Parser]::ParseFile` sobre **todos** los `*.ps1` del repositorio y falla ante cualquier `ParseError`, **sin ejecutar los scripts que analiza**. No afirmar que ya ha pasado esta prueba hasta que sea ejecutada efectivamente en Windows, dado que el entorno de la herramienta no dispone de `pwsh`.
+
+**Recuperación sin reinstalar:** `git pull --ff-only`, lanzar primero el validador sintáctico y, si da PASS, repetir `preflight-clean-assistant-real.ps1`. Sin cambio en la Conga ni DNS.
