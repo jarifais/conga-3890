@@ -204,3 +204,10 @@ La adición utiliza SHA-1 para los algoritmos indicados, con las limitaciones cr
 ### 2026-11-05 · Negociación SSH por Wi-Fi llega a verificación de identidad
 
 Después de limitar por conexión `HostKeyAlgorithms=+ssh-rsa` y `MACs=+hmac-sha1`, el cliente OpenSSH de Windows alcanzó el aviso de primera conexión: `The authenticity of host ... can't be established` y presentó una huella **RSA SHA256** del host. La huella concreta y la IP local no se publican en este repositorio. **Todavía no se ha aceptado ni validado independientemente la clave** ni se ha autenticado la sesión. El siguiente paso es comparar la huella del mismo servicio SSH a través del túnel USB `adb forward tcp:<puerto-local> tcp:22`; solo si coincide se autorizará la aceptación por Wi-Fi. Mantener los algoritmos SSH heredados limitados a conexiones expresas con la Conga.
+
+
+### 2026-11-05 · Identidad SSH confirmada por dos canales independientes
+
+El usuario obtuvo una huella de clave de host **RSA SHA256 idéntica** por conexión directa Wi-Fi y mediante túnel USB `adb forward tcp:16693 tcp:22` usando OpenSSH con opciones puntuales `HostKeyAlgorithms=+ssh-rsa` y `MACs=+hmac-sha1`. **Se confirma que los dos accesos presentan la misma clave SSH**. Por prudencia, no se publica en el repositorio la huella completa ni la IP privada del dispositivo.
+
+Siguiente paso: responder `no` a la conexión de prueba por USB; volver a conectar por Wi-Fi y aceptar la clave verificada. **La autenticación SSH por Wi-Fi aún no ha sido constatada**. No hay nueva telemetría de batería ni comando de cepillo validado.
