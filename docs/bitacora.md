@@ -199,3 +199,8 @@ Unable to negotiate ... no matching MAC found. Their offer: hmac-sha1,hmac-md5
 ```
 
 La adición utiliza SHA-1 para los algoritmos indicados, con las limitaciones criptográficas correspondientes. **No** desactivar la verificación de clave del servidor ni aceptar una huella desconocida sin compararla por USB. Tras conseguir la sesión SSH, comprobar la lectura real de batería; **ningún control de motor está validado**.
+
+
+### 2026-11-05 · Negociación SSH por Wi-Fi llega a verificación de identidad
+
+Después de limitar por conexión `HostKeyAlgorithms=+ssh-rsa` y `MACs=+hmac-sha1`, el cliente OpenSSH de Windows alcanzó el aviso de primera conexión: `The authenticity of host ... can't be established` y presentó una huella **RSA SHA256** del host. La huella concreta y la IP local no se publican en este repositorio. **Todavía no se ha aceptado ni validado independientemente la clave** ni se ha autenticado la sesión. El siguiente paso es comparar la huella del mismo servicio SSH a través del túnel USB `adb forward tcp:<puerto-local> tcp:22`; solo si coincide se autorizará la aceptación por Wi-Fi. Mantener los algoritmos SSH heredados limitados a conexiones expresas con la Conga.
