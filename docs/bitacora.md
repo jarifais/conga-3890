@@ -211,3 +211,10 @@ Después de limitar por conexión `HostKeyAlgorithms=+ssh-rsa` y `MACs=+hmac-sha
 El usuario obtuvo una huella de clave de host **RSA SHA256 idéntica** por conexión directa Wi-Fi y mediante túnel USB `adb forward tcp:16693 tcp:22` usando OpenSSH con opciones puntuales `HostKeyAlgorithms=+ssh-rsa` y `MACs=+hmac-sha1`. **Se confirma que los dos accesos presentan la misma clave SSH**. Por prudencia, no se publica en el repositorio la huella completa ni la IP privada del dispositivo.
 
 Siguiente paso: responder `no` a la conexión de prueba por USB; volver a conectar por Wi-Fi y aceptar la clave verificada. **La autenticación SSH por Wi-Fi aún no ha sido constatada**. No hay nueva telemetría de batería ni comando de cepillo validado.
+
+
+### 2026-11-05 · Sesión SSH por Wi-Fi autenticada
+
+El usuario confirmó que **ya está dentro de la Conga por SSH**, después de aceptar la huella del servidor previamente verificada mediante USB y autenticarse como administrador. Por tanto, la administración interactiva por LAN funciona; no depende del túnel USB.
+
+**Siguiente prueba propuesta, todavía sin resultado:** buscar trazas de batería, carga y voltaje en `logread` y archivos `/mnt/UDISK/log/*.temp`, mediante búsquedas de solo lectura. El objetivo inmediato sigue siendo **mostrar un porcentaje real**, no el `capacity=0` no validado del kernel. El ensayo del cepillo lateral se pospone hasta verificar el protocolo de encendido/parada.
