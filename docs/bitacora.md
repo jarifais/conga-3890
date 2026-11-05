@@ -347,3 +347,19 @@ La preparacion del laboratorio ha fallado.
 **Recuperación sin borrar carpetas:** desde PowerShell ejecutar `git -C "$env:USERPROFILE\\Conga3890-TOOLS" pull --ff-only` y volver a lanzar `scripts/preparar-clean-assistant-mock.ps1`. Antes de reintentar, no hacer `git reset --hard`, `git clean` ni eliminar `Conga3890-LAB`. Se conservan la carpeta de herramientas y el repositorio upstream parcialmente creado.
 
 **Estado:** corrección publicada; segunda ejecución y compatibilidad efectiva de dependencias con Python 3.14 **pendientes de comprobar por el usuario**. No se ha conectado el robot al simulador ni se ha leído su batería real.
+
+
+## 2026-11-05 17:35 (Europe/Madrid) · Primer éxito del laboratorio Clean Assistant mock en Windows
+
+El usuario ejecutó la versión corregida de `preparar-clean-assistant-mock.ps1` tras `git pull --ff-only`. **Resultado confirmado por salida completa: PASS.**
+
+- Python: `3.14.3` en Windows 11; las dependencias Python se instalaron satisfactoriamente en el entorno virtual privado.
+- Código upstream: `0cf13b370bbb708c429a64be0270210e8426d0ca` (Clean Assistant v0.36.1), hash Git verificado.
+- `PASS: MockRobot confirmado, sin robot fisico`.
+- `PASS: conversion 0-200 a porcentaje validada con datos sinteticos`.
+- `=== LABORATORIO PREPARADO ===` y `=== PREPARACION COMPLETADA ===`.
+- Ubicación local: `%USERPROFILE%\\Conga3890-LAB\\clean-assistant` (sin datos de identidad del robot publicados).
+
+El mensaje de importación `[firstrun] instalación nueva: se aplicarán OTA off + vaciado tras cada limpieza` pertenece a **preferencias iniciales de Clean Assistant mock** y **no significa que se haya enviado comando alguno a la Conga**, pues `MockRobot` se confirmó por aserción.
+
+**Pendientes inmediatos:** arrancar servidor mock limitado a `127.0.0.1:18000`; comprobar que `/api/info` informa `mode=mock` y `/api/state` presenta un estado simulado. **Sin** configurar servidor real, DNS, firmware ni cepillo hasta superar la prueba. La lectura de batería física sigue pendiente.
