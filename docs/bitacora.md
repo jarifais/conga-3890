@@ -284,3 +284,22 @@ Desde SSH Wi-Fi el usuario leyó (sin cambiar configuración):
 **Siguiente comprobación, pasiva y sin tocar firmware:** [`scripts/identificar-cliente-9090.sh`](../scripts/identificar-cliente-9090.sh) consulta `/proc/net/tcp` para localizar los inodos de conexiones `ESTABLISHED` al puerto remoto 9090 y relaciona sus descriptores con el PID/ejecutable de Linux. El usuario aún no ha ejecutado esta prueba.
 
 **Batería:** no se ha obtenido todavía un porcentaje real. Una vez identificada la sesión, estudiar offline el formato de consulta `get_status` y el campo `battary` (escala 0..200) antes de evaluar un método no destructivo. La conexión TCP remota cifrada no debe interceptarse ni redirigirse a ciegas. Cepillo lateral individual: ninguna orden de arranque/parada validada; no moverlo por conjetura.
+
+
+### 2026-11-05 · Propietario del socket remoto TCP/9090 confirmado
+
+La búsqueda de la conexión `ESTABLISHED` al puerto remoto TCP/9090 en `/proc/net/tcp` devolvió **inodo 4211**. La inspección de descriptores Linux mostró:
+
+~~~text
+Inodo: 4211
+PID: 483
+/usr/sbin/RobotApp
+~~~
+
+**Confirmado:** el proceso `RobotApp`, PID 483, mantiene la conexión saliente al servidor de control en TCP/9090. Se trata de una **conexión saliente**, no de un puerto 9090 abierto en la IP local del robot. Por sí solo este dato no confirma la semántica de las tramas ni garantiza que la carga útil sea legible (podría utilizar TLS/WSS).
+
+**Análisis offline adicional:** el binario `RobotApp` contiene los métodos `get_status`, `get_status_Handler_Callbak`, `CManagerWebsocket::handleGetStatusReq`, las cadenas `battary`, `battery_percent`, y `CManagerWebsocket::sendMsgToServer`. Estas son evidencias de la ruta lógica de consulta, no una interfaz local directamente invocable.
+
+**Estrategia:** no dirigir peticiones arbitrarias a TCP/6000 (flujo MRPT de mapas) ni a la sesión saliente cifrada. Para obtener una respuesta `get_status` funcional se necesita **o bien** reconstruir y validar el protocolo de petición de estado, **o bien** montar un backend local compatible como Clean Assistant (proyecto que reporta soporte para 3890) y configurar que el robot se conecte allí. Esta segunda vía supone cambios DNS/red y posiblemente reinicio, no es una prueba de solo lectura ni un cambio trivial.
+
+**Objetivos pendientes:** mostrar porcentaje real de batería en consola y, después, estudiar inicio/parada segura del cepillo lateral. No existe todavía ninguna orden individual de cepillo validada.
