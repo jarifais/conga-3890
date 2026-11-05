@@ -135,3 +135,21 @@ Prueba en `root@TinaLinux:~#`:
 2. Desde **Windows PowerShell** en la misma red: ejecutar [`scripts/verificar-wifi.ps1`](../scripts/verificar-wifi.ps1), que lee el banner SSH por el puerto 22 sin autenticarse ni enviar órdenes. Esta prueba puede fallar si la Conga está en modo punto de acceso, en otra red o la LAN aísla dispositivos.
 3. Si funciona, estudiar un cliente SSH sobre LAN para diagnóstico y el mecanismo real de `get_status` / `handleGetBattaryReq`. **No interpretar** valores `battary` de protocolos de terceros como porcentajes sin conocer su escala.
 4. Para el cepillo, identificar semántica de las órdenes ON/OFF, interbloqueos y parada de emergencia antes de mover el actuador.
+
+
+## 2026-11-05 · Wi-Fi local: SSH confirmado
+
+El usuario comprobó desde Windows PowerShell, **sin túnel ADB**, una conexión directa a la IPv4 asignada a su Conga en la LAN, puerto TCP/22. Respuesta observada:
+
+```text
+Respuesta: SSH-2.0-dropbear_2015.71
+CONEXION WIFI VERIFICADA
+```
+
+**Confirmado:** el equipo que respondió es un servicio SSH Dropbear accesible por la LAN y coincide en versión con el servicio previamente alcanzado por USB. **Todavía no se ha verificado una sesión SSH autenticada** ni una consulta real de batería por Wi-Fi.
+
+**Privacidad:** la dirección IP concreta se conserva en la sesión de laboratorio, no se incorpora a la documentación pública. En el siguiente paso se comprobará el acceso interactivo por SSH con verificación normal de clave de host. No incrustar la contraseña en scripts o URI.
+
+**Cepillo lateral delantero:** objetivo pendiente. Aún no hay una orden de inicio/parada individual verificada. No enviar comandos arbitrarios a motores; investigar primero el protocolo y las condiciones de parada.
+
+**Nota sobre el flujo TCP/6000:** el encabezado recibido contenía `MRPTMessage` y `COccupancyGridMap2D`, indicativos de un mapa de ocupación, no de la batería. No publicar capturas completas de tramas de mapa.
