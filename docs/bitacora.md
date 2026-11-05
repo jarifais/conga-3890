@@ -1,0 +1,46 @@
+# Bitácora técnica — Conga 3890
+
+## 2026-11-05 · Sesión inicial USB (Windows 11)
+
+**Fuentes**: resultados capturados desde PowerShell, consola Tina Linux y análisis estático de los archivos extraídos. Se han omitido deliberadamente identificadores únicos, credenciales y contenidos de mapas.
+
+### Pruebas completadas
+
+1. Windows detectó un dispositivo USB con descripción `Android` y VID/PID `18D1:D002`; `adb devices -l` confirmó estado `device`.
+2. `adb shell "uname -a"` falló con `/bin/login: unrecognized option: c`. Causa observada: el shell ADB ejecuta `/bin/login`, incompatible con la opción `-c` que utiliza el modo no interactivo.
+3. `adb shell`, en modo interactivo, presentó `TinaLinux login:` y permitió autenticación administrativa. No documentar credenciales en el repositorio.
+4. `id` devolvió `uid=0(root)`. `uname -a` identificó kernel `3.4.39`, ARMv7. `/proc/cpuinfo` mostró cuatro núcleos Cortex-A7, plataforma `sun8i`; `/proc/meminfo`, `524288 kB`.
+5. `/etc/openwrt_release` identificó `tina.robotix.20200831.194440`, `Neptune`, revisión `57513AA3`, `2.0.0`.
+6. Se comprobaron procesos `Monitor`, `RobotApp`, `AuxCtrl` y `everest-server`, activos bajo el supervisor. `Monitor` aparece en el script `/etc/init.d/robotManager`.
+7. `netstat -ln` mostró TCP/22 (SSH), TCP/6000, TCP/5037 solo loopback y UDP/8899; sockets UNIX `/tmp/everest_sock`, `/tmp/AuxEverest_Sock` y `/tmp/cliManager.sock`.
+8. Se extrajeron cuatro ejecutables desde `/usr/sbin` con `adb pull` y la biblioteca `/usr/lib/libcli.so`. Se calcularon hashes y se analizaron offline. **No se redistribuyen**.
+9. La biblioteca `libcli.so` incluye un subsistema CLI con prompt `Robot>`, registro de comandos y socket `/tmp/cliManager.sock`. No hay un comando de batería validado.
+10. `adb forward tcp:16690 localfilesystem:/tmp/cliManager.sock` permitió abrir la conexión local, pero se cerró sin entregar bytes. **No prueba el protocolo de la CLI**, ni confirma por sí solo que el extremo remoto aceptara una sesión útil.
+11. Prueba de control: `adb forward tcp:16691 tcp:22`; la conexión local devolvió el banner **`SSH-2.0-dropbear_2015.71`**. **Queda confirmada la comunicación de datos a través del túnel USB**.
+
+### Incidencias y lecciones
+
+- Se pegó accidentalmente un script de PowerShell dentro de `ash` (consola de la Conga), provocando errores de sintaxis. Separar siempre `PS C:\...>` (PC) y `root@TinaLinux:~#` (robot).
+- Los registros mostraron actividad de `Monitor` y reinicios de servicios después de una ejecución accidental. Se detuvo la acción y se verificó que quedaba **una instancia** de cada servicio principal. El PID de `AuxCtrl` cambió, compatible con un reinicio. No iniciar demonios manualmente.
+- Las cadenas sobre batería, IMU, LiDAR y mapas **solo prueban la presencia de código**, no la disponibilidad de telemetría en vivo.
+
+### Estado de los hitos
+
+| Hito | Estado |
+| --- | --- |
+| ADB USB | Confirmado |
+| Consola Tina Linux | Confirmada |
+| Verificación del túnel USB TCP | Confirmada (banner SSH) |
+| Localización de procesos y sockets | Confirmada |
+| Análisis estático inicial de ejecutables y `libcli.so` | Completado |
+| Decodificar el protocolo de `cliManager.sock` | Pendiente |
+| Lectura real de batería por USB | Pendiente |
+| Lectura real de sensores / LiDAR | Pendiente |
+| Acceso y control por Wi-Fi | Pospuesto |
+
+### Próximos experimentos (orden de prioridad)
+
+1. Analizar offline las funciones de establecimiento de sesión de la CLI (cliente/servidor) y el motivo posible del cierre; no enviar comandos a ciegas.
+2. Buscar comandos de **solo lectura** registrados dinámicamente por `RobotApp`, distinguiendo consola CLI de protocolo de aplicación.
+3. Documentar el formato exacto de solicitudes `DEVICE_STATUS_GETTING_REQ` / respuestas `DEVICE_STATUS_GETTING_RSP`, sin probarlas en el robot hasta verificar los efectos.
+4. Si existe una consulta inocua validada, ensayar bajo supervisión con el robot detenido y registrar únicamente la telemetría anonimizada.
