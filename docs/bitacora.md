@@ -232,3 +232,39 @@ La instrucción condicional `for f in ...; do if [ -r "$f" ]; then echo "=== $f 
 Hay evidencia externa específica de Conga 3890 de respuestas `get_status` con los campos `battary` y `chargeStatus`, pero se trata de un protocolo de aplicación/nube, no de valores de `sysfs`. Referencia: https://github.com/miguelsg29/clean-assistant/issues/14 . No inferir porcentaje para la unidad actual.
 
 **Experimento siguiente propuesto:** `scripts/inspeccionar-stream-tcp6000-wifi.ps1`. Lee, sin emitir comandos, como máximo 4 MiB en ~6 segundos de TCP/6000 por Wi-Fi; solo informa la aparición de una lista fija de marcadores técnicos (`CObservationBattery`, `COccupancyGridMap2D`, `MRPTMessage`, etc.). Descarta el contenido leído y no publica mapas. Este experimento aún no ha sido ejecutado por el usuario y **no garantiza obtener batería**. Si la transmisión solo contiene mapas, investigar `get_status` mediante un cliente de protocolo comprobado, no enviar tramas arbitrarias.
+
+
+### 2026-11-05 · Muestreo pasivo completo de TCP/6000 por Wi-Fi
+
+**Prueba realizada:** lectura de hasta 4 MiB durante aproximadamente seis segundos por TCP/6000, sin transmitir órdenes, desde el PC por Wi-Fi. Resultado:
+
+~~~text
+Bytes examinados: 644486
+MRPTMessage
+COccupancyGridMap2D
+~~~
+
+**Hechos:** el servidor entregó 644.486 bytes y los únicos marcadores reconocidos por el buscador fueron los de MRPT y `COccupancyGridMap2D`. El flujo puede incluir datos binarios adicionales no reconocibles por búsqueda de texto, pero **no proporcionó una lectura de porcentaje de batería identificable**. No se conservaron datos del mapa.
+
+**Corrección metodológica:** no volver a sondear TCP/6000 a la espera de que aparezcan espontáneamente datos de batería: por ahora demuestra transmisión de mapas, no la API `get_status`.
+
+### Pista concreta confirmada en implementación de tercero
+
+Se inspeccionaron `conga_core/state.py` y `backend/app.py` del proyecto **Clean Assistant** (fuentes externas):
+
+- `RobotState.update_from_report(data)` lee `data["battary"]` y asigna `battery = int(battary / 2)` (escala nativa 0..200 a porcentaje 0..100).
+- Hay trazas públicas de una **Conga 3890** donde `get_status` incluye `battary: 200`; equivale a 100% **en ese equipo, no en el nuestro**.
+- El porcentaje expuesto por Clean Assistant está en **`GET /api/state`**, campo `battery` con `online`, `charging`, `state`.
+- **`GET /api/battery` NO da el porcentaje actual**: devuelve la analítica de salud (ciclos/consumo/velocidad de carga). No confundir los dos endpoints.
+- El puerto HTTP típico del servicio independiente Clean Assistant es 8000; **esa API no existe actualmente en el robot ni en TCP/6000**.
+- Clean Assistant soporta la 3890 según un usuario (issue 14), pero redirigir el robot al servicio requiere preparación de servidor y DNS y potencialmente reinicio; todavía no se ha hecho en nuestro laboratorio.
+
+Fuentes:
+- https://github.com/miguelsg29/clean-assistant/blob/main/conga_core/state.py
+- https://github.com/miguelsg29/clean-assistant/blob/main/backend/app.py
+- https://github.com/miguelsg29/clean-assistant/issues/14
+- https://github.com/miguelsg29/clean-assistant
+
+**Artefacto preparado**: `scripts/mostrar-bateria-clean-assistant.ps1`, PowerShell de solo lectura para cuando un servidor real de Clean Assistant esté conectado; no es ejecutable útil en nuestro entorno actual hasta instalar y configurar ese servicio. La alternativa es reconstruir nuestra propia consulta de estado de `RobotApp` (trabajo de protocolo pendiente).
+
+**Cepillo lateral:** todavía no existe control individual y parada validado. Se mantiene bloqueado cualquier ensayo activo.
