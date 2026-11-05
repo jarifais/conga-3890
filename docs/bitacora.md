@@ -44,3 +44,17 @@
 2. Buscar comandos de **solo lectura** registrados dinámicamente por `RobotApp`, distinguiendo consola CLI de protocolo de aplicación.
 3. Documentar el formato exacto de solicitudes `DEVICE_STATUS_GETTING_REQ` / respuestas `DEVICE_STATUS_GETTING_RSP`, sin probarlas en el robot hasta verificar los efectos.
 4. Si existe una consulta inocua validada, ensayar bajo supervisión con el robot detenido y registrar únicamente la telemetría anonimizada.
+
+
+## 2026-11-05 · Primer diagnóstico de batería por `sysfs`
+
+**Prueba de solo lectura ejecutada realmente en la shell de la Conga**:
+
+- `ls /sys/class/power_supply` devolvió `ac`, `battery` y `usb`.
+- `/sys/class/power_supply/battery/capacity` existe y devolvió **`0`**.
+- `logread` filtrado por `battery percent actual` y `handleGetBattaryReq battery_percent` no mostró coincidencias.
+- La copia de múltiples comandos a la terminal interactiva produjo eco intercalado; las órdenes básicas finalizaron.
+
+**Interpretación:** ese cero todavía **no es una medición verificada** del nivel de la batería principal. Puede ser una interfaz del controlador de alimentación del SoC sin datos útiles para el robot. Tampoco la ausencia de coincidencias en `logread` demuestra que la telemetría no exista.
+
+**Próxima comprobación (sin modificaciones):** consultar `type`, `present`, `status`, `capacity`, `voltage_now`, `current_now` y `charge_now` de `/sys/class/power_supply/battery` para identificar si el indicador responde a hardware real.
