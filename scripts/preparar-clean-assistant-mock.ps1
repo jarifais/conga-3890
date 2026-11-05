@@ -40,7 +40,11 @@
     if ($LASTEXITCODE -ne 0) { throw "No se puede comprobar el estado de Git." }
     if ($dirty) { throw "Existen cambios locales en Clean Assistant. No se sobrescribiran." }
 
-    $head = & git -C $src rev-parse --verify HEAD 2>$null
+    # Un repositorio recien inicializado NO tiene HEAD. --quiet evita escribir
+    # "fatal: Needed a single revision" en stderr, que PowerShell 5.1
+    # con ErrorActionPreference=Stop trataria como error terminante.
+    $head = & git -C $src rev-parse --verify --quiet HEAD
+    if ($LASTEXITCODE -ne 0) { $head = $null }
     if ($head -ne $commit) {
         & git -C $src fetch --no-tags --depth 1 origin $commit
         if ($LASTEXITCODE -ne 0) { throw "No se pudo descargar el commit fijado." }
