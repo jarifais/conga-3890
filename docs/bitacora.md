@@ -363,3 +363,21 @@ El usuario ejecutó la versión corregida de `preparar-clean-assistant-mock.ps1`
 El mensaje de importación `[firstrun] instalación nueva: se aplicarán OTA off + vaciado tras cada limpieza` pertenece a **preferencias iniciales de Clean Assistant mock** y **no significa que se haya enviado comando alguno a la Conga**, pues `MockRobot` se confirmó por aserción.
 
 **Pendientes inmediatos:** arrancar servidor mock limitado a `127.0.0.1:18000`; comprobar que `/api/info` informa `mode=mock` y `/api/state` presenta un estado simulado. **Sin** configurar servidor real, DNS, firmware ni cepillo hasta superar la prueba. La lectura de batería física sigue pendiente.
+
+
+### 2026-11-05 · Corrección del falso negativo «mode=local» al consultar la API
+
+El usuario ejecutó `verificar-clean-assistant-mock.ps1` con el servidor en marcha y obtuvo:
+
+~~~text
+El servidor no es simulado (mode=local). Abortado.
+~~~
+
+**Causa raíz comprobada en `backend/app.py` upstream:** `GET /api/info` devuelve `"mode": getattr(robot, "link", "local")`; es la **modalidad de enlace nube/local**, no la variable de arranque `CONGA_MODE` (`mock` o `real`). En el simulador `MockRobot.link = "local"`, por lo que el verificador producía un **falso negativo**. No hay indicio de instalación incorrecta ni es necesario reinstalar dependencias.
+
+**Correcciones aplicadas directamente al repositorio:**
+1. `scripts/verificar-clean-assistant-mock.ps1` ya no exige `/api/info.mode == "mock"`; comprueba `backend="new"` y la huella sintética determinista de `MockRobot` en `/api/state`: `map_name="Interior"`, `map_head_id=1700000000`, consumibles `74/68/22/81`. El nivel de batería simulado es variable y no sirve como comprobación. Se consulta solo localhost.
+2. `scripts/ejecutar-clean-assistant-mock.ps1` comprueba explícitamente `backend.app.MODE == "mock"` y la clase `MockRobot` ANTES de abrir el puerto HTTP de loopback. La variable local `CONGA_MODE=mock` se fija en el arranque.
+3. `scripts/mostrar-bateria-clean-assistant.ps1` se corrige también: `info.mode` **nunca debe igualarse a `real`**. El lector real rechaza la huella MockRobot y requiere confirmación expresa de `CONGA_MODE=real` y `LOGIN` real comprobados en servidor. Solo se usará tras desplegar el servidor físico; no está listo para esta fase.
+
+**Recuperación:** `git pull --ff-only` desde `Conga3890-TOOLS` y volver a ejecutar **solo** `verificar-clean-assistant-mock.ps1` con el servidor ya abierto, sin reinstalaciones ni modificar firmware. El usuario todavía no ha confirmado el resultado de esta versión corregida.
