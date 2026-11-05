@@ -223,3 +223,12 @@ El usuario confirmó que **ya está dentro de la Conga por SSH**, después de ac
 ### 2026-11-05 · Sin coincidencias de batería en `logread` por SSH
 
 Desde una sesión SSH por Wi-Fi autenticada, el usuario ejecutó `logread | grep -iE 'battery|battary|charge|voltage|percent' | tail -n 20`. **No devolvió ninguna línea**. Esto significa únicamente que el búfer de `logread` no contiene coincidencias con esos términos en el momento de la comprobación; no implica que los sensores no estén activos. Próximo paso: comprobar los archivos de registro propios de `RobotApp` y `everest-server` y, si tampoco hay datos, abandonar la vía de registros y reconstruir la consulta de estado mediante análisis estático de los ejecutables ya obtenidos. No afirmar porcentaje sin lectura validada.
+
+
+### 2026-11-05 · Búsqueda en tres ficheros `*.temp` sin resultados
+
+La instrucción condicional `for f in ...; do if [ -r "$f" ]; then echo "=== $f ==="; grep ...; fi; done` acabó sin imprimir ningún encabezado `=== fichero ===`. **Interpretación correcta:** ninguno de los tres archivos especificados era legible en esas rutas durante el experimento (puede que no existieran). **No** se ha demostrado una búsqueda negativa en su contenido. No se seguirá insistiendo en esos registros.
+
+Hay evidencia externa específica de Conga 3890 de respuestas `get_status` con los campos `battary` y `chargeStatus`, pero se trata de un protocolo de aplicación/nube, no de valores de `sysfs`. Referencia: https://github.com/miguelsg29/clean-assistant/issues/14 . No inferir porcentaje para la unidad actual.
+
+**Experimento siguiente propuesto:** `scripts/inspeccionar-stream-tcp6000-wifi.ps1`. Lee, sin emitir comandos, como máximo 4 MiB en ~6 segundos de TCP/6000 por Wi-Fi; solo informa la aparición de una lista fija de marcadores técnicos (`CObservationBattery`, `COccupancyGridMap2D`, `MRPTMessage`, etc.). Descarta el contenido leído y no publica mapas. Este experimento aún no ha sido ejecutado por el usuario y **no garantiza obtener batería**. Si la transmisión solo contiene mapas, investigar `get_status` mediante un cliente de protocolo comprobado, no enviar tramas arbitrarias.
