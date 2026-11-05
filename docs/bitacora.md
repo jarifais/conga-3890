@@ -104,3 +104,19 @@ current_now: 0
 **Decisión técnica:** suspender los intentos de medir batería por `/sys/class/power_supply/battery`; el porcentaje `0` no está validado, aun cuando `present=1` y `Charging`. No se ha recibido una lectura real. El siguiente paso es identificar una ruta de consulta de `RobotApp` o sus trazas; no ejecutar comandos de motores, firmware ni sockets no documentados.
 
 **Precedente adicional:** un usuario de 3890 compartió trazas `get_status` de un servidor alternativo con el campo `battary` (ver https://github.com/miguelsg29/clean-assistant/issues/14). Este dato acredita que **existe telemetría en ese protocolo**, pero no permite inferir el nivel actual de nuestra unidad ni confirma escalado a porcentaje sin estudiar el código.
+
+
+## 2026-11-05 · Identificado propietario de TCP/6000
+
+Prueba en `root@TinaLinux:~#`:
+
+- En `/proc/net/tcp` se buscó el puerto `0x1770` = **6000** en estado `0A` (LISTEN); apareció el **inodo 897**.
+- El enlace de descriptor `socket:[897]` fue localizado bajo el proceso `everest-server`, **PID 553**.
+
+**Confirmado:** `everest-server` era el proceso que escuchaba en TCP/6000 en ese instante. **No confirmado:** que ese puerto exponga una consulta de batería.
+
+### Precaución tras reexaminar el binario offline
+
+`everest-server` contiene símbolos `CEntityTcp::tcpServerThread`, `tcpReceiveThread`, `tcpSendThread`, `sendSensorData`, `handleTCPMessage`, `setRemoteVelocity` y `autoCleanTest`. También aparecen textos **`EM_DEBUG_SIMULATE_BATTERY`**, **`EI_MANUAL_CONTROL_MODE`**, órdenes de limpieza y calibración. Por tanto, el interfaz TCP podría manejar **acciones activas**; no enviar ninguna trama o comando de prueba sin descifrar el protocolo.
+
+**Experimento propuesto** (todavía no ejecutado en este momento): abrir un túnel ADB a TCP/6000 y leer durante ~2,5 segundos sin enviar datos de aplicación, para comprobar si `everest-server` emite información espontánea. Archivo: [`scripts/sondeo-pasivo-tcp6000.ps1`](../scripts/sondeo-pasivo-tcp6000.ps1). La mera conexión puede modificar el estado de sesión del servicio: realizarla con el robot detenido y cerrar después. **Un paquete recibido no sería, sin decodificación, una medición validada de batería.**
