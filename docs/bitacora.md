@@ -218,3 +218,8 @@ Siguiente paso: responder `no` a la conexión de prueba por USB; volver a conect
 El usuario confirmó que **ya está dentro de la Conga por SSH**, después de aceptar la huella del servidor previamente verificada mediante USB y autenticarse como administrador. Por tanto, la administración interactiva por LAN funciona; no depende del túnel USB.
 
 **Siguiente prueba propuesta, todavía sin resultado:** buscar trazas de batería, carga y voltaje en `logread` y archivos `/mnt/UDISK/log/*.temp`, mediante búsquedas de solo lectura. El objetivo inmediato sigue siendo **mostrar un porcentaje real**, no el `capacity=0` no validado del kernel. El ensayo del cepillo lateral se pospone hasta verificar el protocolo de encendido/parada.
+
+
+### 2026-11-05 · Sin coincidencias de batería en `logread` por SSH
+
+Desde una sesión SSH por Wi-Fi autenticada, el usuario ejecutó `logread | grep -iE 'battery|battary|charge|voltage|percent' | tail -n 20`. **No devolvió ninguna línea**. Esto significa únicamente que el búfer de `logread` no contiene coincidencias con esos términos en el momento de la comprobación; no implica que los sensores no estén activos. Próximo paso: comprobar los archivos de registro propios de `RobotApp` y `everest-server` y, si tampoco hay datos, abandonar la vía de registros y reconstruir la consulta de estado mediante análisis estático de los ejecutables ya obtenidos. No afirmar porcentaje sin lectura validada.
