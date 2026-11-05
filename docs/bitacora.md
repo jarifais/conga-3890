@@ -87,3 +87,20 @@ En la sesión interactiva Tina Linux se listó `/mnt/UDISK/log` y se buscó `Get
 **Próxima prueba segura:** observar si el robot indica luz azul (encendido) o naranja (cargando). Solo si realmente estuviera apagado, seguir el manual Conga 3890 para encenderlo (pulsación mantenida ~3 segundos); evitar pulsaciones cortas que podrían arrancar limpieza. Volver a leer atributos de `sysfs` y, si es posible, comparar con el porcentaje de la app oficial. Si los ceros persisten, pasar a reconstruir un método de consulta en `RobotApp`/`everest-server`; no inyectar órdenes a sensores ni motores.
 
 **Referencia:** https://manualzz.com/doc/73806038/cecotec-conga-3890-instruction-manual
+
+
+### Cuarta comprobación: batería Linux tras revisar encendido
+
+Se repitió la lectura `present status capacity voltage_now current_now` desde la shell interactiva y el resultado **no cambió**:
+
+```text
+present: 1
+status: Charging
+capacity: 0
+voltage_now: 0
+current_now: 0
+```
+
+**Decisión técnica:** suspender los intentos de medir batería por `/sys/class/power_supply/battery`; el porcentaje `0` no está validado, aun cuando `present=1` y `Charging`. No se ha recibido una lectura real. El siguiente paso es identificar una ruta de consulta de `RobotApp` o sus trazas; no ejecutar comandos de motores, firmware ni sockets no documentados.
+
+**Precedente adicional:** un usuario de 3890 compartió trazas `get_status` de un servidor alternativo con el campo `battary` (ver https://github.com/miguelsg29/clean-assistant/issues/14). Este dato acredita que **existe telemetría en ese protocolo**, pero no permite inferir el nivel actual de nuestra unidad ni confirma escalado a porcentaje sin estudiar el código.
