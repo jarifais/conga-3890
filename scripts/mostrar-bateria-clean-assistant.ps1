@@ -19,6 +19,16 @@
 
     Write-Host "=== CONSULTA DE ESTADO (Clean Assistant) ===" -ForegroundColor Cyan
 
+    # Verificacion imprescindible: el modo mock simula bateria realista y marca online=true.
+    $infoUrl = "http://" + $ipServidor + ":" + $puerto + "/api/info"
+    try {
+        $info = Invoke-RestMethod -Method Get -Uri $infoUrl -TimeoutSec 5
+    }
+    catch { throw "No se pudo verificar el modo del servidor Clean Assistant." }
+    if ($info.mode -ne "real") {
+        throw "ABORTADO: servidor en modo $($info.mode), no conectado a una Conga real."
+    }
+
     try {
         $estado = Invoke-RestMethod -Method Get -Uri $url -TimeoutSec 5
     }
