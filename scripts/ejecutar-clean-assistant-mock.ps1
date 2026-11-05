@@ -27,6 +27,10 @@
 
     Push-Location $src
     try {
+        & $python -c "from backend.app import MODE, robot; assert MODE == 'mock' and type(robot).__name__ == 'MockRobot'; print('PASS: backend simulado comprobado antes de abrir HTTP')"
+        if ($LASTEXITCODE -ne 0) {
+            throw "No se pudo confirmar MockRobot. No se arrancara HTTP."
+        }
         & $python -m uvicorn backend.app:app --host 127.0.0.1 --port 18000
         if ($LASTEXITCODE -ne 0) { throw "Error al iniciar el servidor." }
     }
