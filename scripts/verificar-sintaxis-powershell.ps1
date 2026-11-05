@@ -16,10 +16,10 @@
         [void][System.Management.Automation.Language.Parser]::ParseFile(
             $file.FullName, [ref]$tokens, [ref]$errors
         )
-        if (@($errors).Count -gt 0) {
+        if ($null -ne $errors -and $errors.Count -gt 0) {
             $fallos++
             Write-Host ("FAIL: {0}" -f $file.Name) -ForegroundColor Red
-            foreach ($err in @($errors)) {
+            foreach ($err in $errors) {
                 Write-Host ("  Linea {0}, columna {1}: {2}" -f
                     $err.Extent.StartLineNumber,
                     $err.Extent.StartColumnNumber,
