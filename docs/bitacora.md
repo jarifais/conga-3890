@@ -381,3 +381,28 @@ El servidor no es simulado (mode=local). Abortado.
 3. `scripts/mostrar-bateria-clean-assistant.ps1` se corrige también: `info.mode` **nunca debe igualarse a `real`**. El lector real rechaza la huella MockRobot y requiere confirmación expresa de `CONGA_MODE=real` y `LOGIN` real comprobados en servidor. Solo se usará tras desplegar el servidor físico; no está listo para esta fase.
 
 **Recuperación:** `git pull --ff-only` desde `Conga3890-TOOLS` y volver a ejecutar **solo** `verificar-clean-assistant-mock.ps1` con el servidor ya abierto, sin reinstalaciones ni modificar firmware. El usuario todavía no ha confirmado el resultado de esta versión corregida.
+
+
+## 2026-11-05 · Éxito completo de API simulada; detectado riesgo en arranque real
+
+El usuario ejecutó el verificador corregido tras `git pull --ff-only` y devolvió:
+
+~~~text
+PASS: API de Clean Assistant accesible.
+PASS: huella del robot simulado MockRobot v0.36.1.
+Enlace de servidor: local (NO indica CONGA_MODE)
+SOLO SIMULACION. NO ES LA BATERIA DE LA CONGA REAL.
+Bateria simulada: 10 %
+Estado simulado: docked
+Cargando (simulado): True
+~~~
+
+**Conclusión:** entorno, HTTP, endpoints y huella mock verificados en Windows del usuario. La cifra 10% es **simulada**; no proporciona información sobre la batería de la Conga física.
+
+**Hallazgo de seguridad al revisar upstream v0.36.1**: `backend/app.py::_apply_first_run_defaults()` se ejecuta cuando el robot real informa `online=True` en una instalación nueva y transmite **dos comandos reales**: `set_upgrade(False)` (desactiva OTA automática) y `dust_freq(0)` (vaciado tras cada limpieza). Además establece en el estado de Clean Assistant el tipo de base `Colector automático`, propio del modelo 8090 y no validado para la 3890. Este comportamiento **no es admisible en nuestro primer experimento de lectura pasiva** sin protección. Upstream comprueba si existe el archivo `firstrun.json` en `DATA_DIR` y, si está presente, desactiva la aplicación de esos defaults: la futura instalación real deberá usar un `DATA_DIR` nuevo, aislado del mock y con esa marca precreada y verificada antes de admitir conexiones del robot.
+
+**Fase siguiente preparada (solo lectura):** `scripts/preflight-clean-assistant-real.ps1` analiza el host Windows antes de arrancar el backend real: commit fijado, Python virtual, puertos 9090/8001/8002/8006/8000, OpenSSL y direcciones LAN. No inicia ningún servicio, no cambia DNS, no toca robot ni cortafuegos. **Pendiente de ejecución y diagnóstico del usuario.**
+
+**Nota arquitectónica:** `conga_core/robot.py::_ensure_certs` necesita OpenSSL CLI para crear un certificado con SAN para múltiples dominios; `RealRobot::_serve` escucha en `0.0.0.0:9090`; `LocalCloud.start` crea listeners `0.0.0.0:8001/8002/8006`. No iniciar esa variante antes de confirmar puertos disponibles y control de acceso del host; el mock solo escucha en loopback 127.0.0.1.
+
+**Estado:** batería física y cepillo lateral independiente, pendientes. Ningún cambio en el DNS o firmware de la Conga.
